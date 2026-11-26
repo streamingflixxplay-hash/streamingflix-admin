@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Painel Streaming Flix</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="brand"><span class="mark">▶</span><div><strong>STREAMING <span>FLIX</span></strong><small>Painel remoto do aplicativo</small></div></header>
+    <section id="setupNotice" class="notice hidden"></section>
+    <section id="loginCard" class="card login-card">
+      <div class="eyebrow">ÁREA ADMINISTRATIVA</div>
+      <h1>Entrar no painel</h1>
+      <p>Use o usuário administrador criado no Supabase.</p>
+      <form id="loginForm">
+        <label>E-mail<input id="email" type="email" autocomplete="username" required></label>
+        <label>Senha<input id="password" type="password" autocomplete="current-password" required></label>
+        <button class="primary" type="submit">Entrar</button>
+      </form>
+      <div id="loginStatus" class="status" role="status"></div>
+    </section>
+    <section id="admin" class="hidden">
+      <header class="page-heading"><div><div class="eyebrow">CONFIGURAÇÃO PUBLICADA PARA TODOS</div><h1>Administração</h1></div><button id="logout" class="quiet">Sair</button></header>
+      <div class="card">
+        <div class="section-heading"><div><h2>Banners iniciais</h2><p>Envie imagens para aparecerem na tela inicial do app.</p></div><label class="upload primary">Adicionar banner<input id="bannerFile" type="file" accept="image/jpeg,image/png,image/webp" multiple></label></div>
+        <div class="mode-row"><label>Exibição<select id="bannerMode"><option value="rotate">Rotativa</option><option value="fixed">Fixa</option></select></label><label id="fixedBannerWrap" class="hidden">Banner fixo<select id="fixedBanner"></select></label></div>
+        <div id="bannerList" class="banner-list"></div>
+        <div class="hint">Formatos: JPG, PNG ou WebP. Recomendado: 16:9, até 12 MB por imagem.</div>
+      </div>
+      <div class="card">
+        <div class="section-heading"><div><h2>Endereços dos servidores</h2><p>Altera os endereços base usados pelo app Streaming Flix Block.</p></div></div>
+        <div class="server-grid">
+          <label>Streaming Flix 1<input id="srv_flix_1" inputmode="url" placeholder="https://servidor.example"></label>
+          <label>Streaming Flix 2<input id="srv_flix_2" inputmode="url" placeholder="https://servidor.example"></label>
+          <label>Streaming Flix 3<input id="srv_flix_3" inputmode="url" placeholder="https://servidor.example"></label>
+        </div>
+        <div class="hint">Informe somente o endereço base, sem usuário, senha, caminho de playlist ou parâmetros.</div>
+      </div>
+      <footer class="savebar"><div id="saveStatus" class="status" role="status"></div><button id="save" class="primary">Salvar alterações</button></footer>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

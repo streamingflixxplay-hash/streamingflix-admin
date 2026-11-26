@@ -1,0 +1,1 @@
+window.STREAMINGFLIX_CONFIG = { supabaseUrl: "https://bofcmpbckwnbcsqhezat.supabase.co", publishableKey: "sb_publishable_u0-EFiVVJHQ01yjYxLOyRQ_0Ldwmgdy" };
