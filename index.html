@@ -39,6 +39,19 @@
         </div>
         <div class="hint">Informe somente o endereço base, sem usuário, senha, caminho de playlist ou parâmetros.</div>
       </div>
+      <div class="card">
+        <h2>APK do Streaming Flix</h2>
+        <p>O arquivo publicado fica disponível como streamingflix-final.apk.</p>
+        <form id="apkForm">
+          <label>Selecionar APK<input id="apkFile" type="file" accept=".apk,application/vnd.android.package-archive" required></label>
+          <button class="primary" type="submit">Publicar APK</button>
+        </form>
+        <p id="apkStatus" class="status" role="status"></p>
+        <div id="apkDownload" class="hidden">
+          <label>Link direto<input id="apkUrl" type="url" readonly></label>
+          <a id="apkAnchor" class="primary" href="#">Baixar streamingflix-final.apk</a>
+        </div>
+      </div>
       <footer class="savebar"><div id="saveStatus" class="status" role="status"></div><button id="save" class="primary">Salvar alterações</button></footer>
     </section>
   </main>

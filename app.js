@@ -95,6 +95,7 @@
     const adminStatus = await api("/rest/v1/rpc/is_streamingflix_panel_admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     if (adminStatus !== true) throw new Error("Este usuário ainda não foi liberado como administrador. Adicione o UUID dele em app_panel_admins no Supabase.");
     await loadConfig(); loginCard.classList.add("hidden"); admin.classList.remove("hidden");
+    currentApk().then(showApk).catch(error => message($("apkStatus"), error.message, true));
   }
   async function upload(file) {
     if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 12 * 1024 * 1024) throw new Error("Escolha JPG, PNG ou WebP com até 12 MB.");
@@ -107,6 +108,80 @@
     return { id: objectName, name: file.name, enabled: true, url: `${base}/storage/v1/object/public/streamingflix-banners/${objectName}` };
   }
 
+
+  const apkPartSize = 16 * 1024 * 1024;
+  const apkBucket = "/storage/v1/object/streamingflix-apk";
+  const apkDirect = base + "/functions/v1/streamingflix-final";
+  async function currentApk() {
+    const result = await fetch(base + "/storage/v1/object/authenticated/streamingflix-apk/current.json", {
+      cache: "no-store", headers: { apikey: key, Authorization: "Bearer " + token },
+    });
+    if (result.status === 400 || result.status === 404) return null;
+    if (!result.ok) throw new Error("Não foi possível consultar o APK publicado.");
+    return result.json();
+  }
+  function showApk(manifest) {
+    const url = manifest ? apkDirect : "";
+    $("apkUrl").value = url;
+    $("apkAnchor").href = url || "#";
+    $("apkDownload").classList.toggle("hidden", !manifest);
+  }
+  async function storeApkObject(path, body, contentType, overwrite = false) {
+    const response = await fetch(base + apkBucket + "/" + path, {
+      method: "POST",
+      headers: { apikey: key, Authorization: "Bearer " + token, "Content-Type": contentType,
+        "Cache-Control": "0", "x-upsert": String(overwrite) },
+      body,
+    });
+    if (!response.ok) throw new Error("Falha ao enviar o APK (" + response.status + ").");
+  }
+  $("apkForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const file = $("apkFile").files[0];
+    const status = $("apkStatus");
+    if (!file || !/\.apk$/i.test(file.name) || file.size < 4 || file.size > 8 * apkPartSize) {
+      message(status, "Escolha um arquivo APK de até 128 MB.", true);
+      return;
+    }
+    const button = event.currentTarget.querySelector("button");
+    button.disabled = true;
+    const id = crypto.randomUUID();
+    const paths = [];
+    let published = false;
+    try {
+      const signature = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+      if (signature.join(",") !== "80,75,3,4") throw new Error("O arquivo selecionado não parece ser um APK.");
+      const previous = await currentApk();
+      const parts = Math.ceil(file.size / apkPartSize);
+      for (let part = 0; part < parts; part++) {
+        const path = id + "/" + part;
+        message(status, "Enviando APK (" + (part + 1) + "/" + parts + ")…");
+        await storeApkObject(path, file.slice(part * apkPartSize, (part + 1) * apkPartSize), "application/octet-stream");
+        paths.push(path);
+      }
+      const manifest = { id, size: file.size, parts, previous: previous ? { id: previous.id, parts: previous.parts } : null };
+      await storeApkObject("current.json", JSON.stringify(manifest), "application/json", true);
+      published = true;
+      showApk(manifest);
+      $("apkFile").value = "";
+      message(status, "APK publicado. Copie o link direto abaixo.");
+      const outdated = previous?.previous;
+      if (outdated && /^[a-f0-9-]{36}$/.test(outdated.id) && Number.isInteger(outdated.parts) && outdated.parts > 0 && outdated.parts <= 8) {
+        const prefixes = Array.from({ length: outdated.parts }, (_, index) => outdated.id + "/" + index);
+        await api(apkBucket, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prefixes }) }).catch(() => {});
+      }
+    } catch (error) {
+      if (!published && paths.length) {
+        const active = await currentApk().catch(() => undefined);
+        if (active !== undefined && active?.id !== id) {
+          await api(apkBucket, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prefixes: paths }) }).catch(() => {});
+        }
+      }
+      message(status, error.message, true);
+    } finally {
+      button.disabled = false;
+    }
+  });
   if (!isAdminConfigValid()) {
     showSetup("O painel está pronto. Para conectar, crie o projeto Supabase e configure STREAMINGFLIX_SUPABASE_URL e STREAMINGFLIX_SUPABASE_PUBLISHABLE_KEY nas variáveis do repositório GitHub. Instruções em admin-panel/README.md.");
     $("loginForm").querySelector("button").disabled = true;
